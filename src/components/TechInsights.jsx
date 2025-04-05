@@ -101,40 +101,66 @@ function TechInsights() {
     return () => clearInterval(intervalId)
   }, [lastFetchTime])
 
+  // Format the insight text with proper styling and line breaks
+  const formatInsight = (text) => {
+    if (!text) return '';
+    
+    // Split by paragraph markers like double newlines
+    const paragraphs = text.split(/\n\n+/);
+    
+    return (
+      <div className="space-y-3">
+        {paragraphs.map((paragraph, index) => (
+          <p key={index} className="text-gray-700 leading-relaxed">
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Technical Insights</h2>
-      
-      <div className="bg-indigo-50 p-6 rounded-lg border border-indigo-100 mb-4 flex-grow">
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-pulse text-indigo-600 text-lg">Fetching latest coding & LLM insights...</div>
-          </div>
-        ) : (
-          <p className="text-gray-700 leading-relaxed text-lg">{insight}</p>
-        )}
+      <div className="flex-grow bg-white rounded-lg mb-4 overflow-y-auto">
+        <div className="p-4 border-b border-gray-100 mb-2">
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin mb-3"></div>
+                <p className="text-blue-600 font-medium">Fetching insights...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="prose prose-blue max-w-none">
+              {formatInsight(insight)}
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="flex justify-between items-center text-sm text-gray-500 mt-auto">
         <span>
           {lastFetchTime ? (
-            <>
+            <span className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               <span className="font-medium">Updated:</span> {new Date(lastFetchTime).toLocaleTimeString()}
-            </>
+            </span>
           ) : 'Not updated yet'}
         </span>
         
         <button
           onClick={fetchAIInsight}
           disabled={loading}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded transition disabled:opacity-50"
+          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm rounded-lg shadow-sm transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:transform-none"
         >
-          New Tip
+          Refresh Insights
         </button>
       </div>
       
-      <div className="mt-4 text-xs text-gray-500">
-        <p>Using GPT-4o for coding, development, and LLM technical insights.</p>
+      <div className="mt-3 text-xs text-gray-400">
+        <p>Powered by GPT-4o • Updates hourly</p>
       </div>
     </div>
   )

@@ -1,3 +1,290 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  transition: background-color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* Custom animations */
+@keyframes progressGrow {
+  from { width: 0; }
+  to { width: var(--target-width); }
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+@keyframes completedPulse {
+  0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+  70% { box-shadow: 0 0 0 5px rgba(22, 163, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+/* Progress bar animations */
+.progress-bar-animated {
+  animation: pulseGlow 2s infinite;
+}
+
+.progress-bar-completed {
+  animation: completedPulse 2s infinite;
+}
+
+/* Weekly breakdown styles */
+.daily-progress-bar {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-weight: 500;
+  color: white;
+  font-size: 0.75rem;
+}
+
+/* Add this class to be applied only when the timer is running */
+.timer-running .daily-progress-bar,
+.timer-running .progress-bar-animated {
+  transition: width 0.1s linear;
+}
+
+/* Fullscreen layout */
+.fullscreen-container {
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Improve text on gradient backgrounds */
+.text-shadow {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition: all 0.3s ease;
+}
+
+/* Working Character Animation Styles */
+.working-character-animation {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.character {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  transition: all 0.5s ease;
+  width: 120px;
+  height: 100px;
+}
+
+/* Character components */
+.laptop {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 40px;
+}
+
+.screen {
+  position: absolute;
+  width: 60px;
+  height: 40px;
+  background: #2563eb;
+  border-radius: 5px 5px 0 0;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+}
+
+.keyboard {
+  position: absolute;
+  bottom: 0;
+  width: 60px;
+  height: 5px;
+  background: #111827;
+  border-radius: 0 0 5px 5px;
+}
+
+.character-body {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 50px;
+}
+
+.head {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 25px;
+  height: 25px;
+  background: #fcd34d;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.face {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 15px;
+  height: 6px;
+  border-radius: 5px;
+  background: #1f2937;
+}
+
+.arms {
+  position: absolute;
+  bottom: 10px;
+  width: 100%;
+  height: 20px;
+}
+
+.arm-left, .arm-right {
+  position: absolute;
+  bottom: 0;
+  width: 8px;
+  height: 20px;
+  background: #fcd34d;
+  border-radius: 3px;
+}
+
+.arm-left {
+  left: 0;
+  transform-origin: bottom;
+}
+
+.arm-right {
+  right: 0;
+  transform-origin: bottom;
+}
+
+.desk {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 10px;
+  background: #4b5563;
+  border-radius: 5px;
+}
+
+/* Working animation */
+@keyframes typing {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes screenGlow {
+  0% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.5); }
+  50% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.8); }
+  100% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.5); }
+}
+
+.character.working .arm-left {
+  animation: typing 0.5s infinite;
+}
+
+.character.working .arm-right {
+  animation: typing 0.5s infinite reverse;
+}
+
+.character.working .screen {
+  animation: screenGlow 2s infinite;
+}
+
+/* Idle animation */
+@keyframes breathe {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+
+.character.idle {
+  animation: breathe 3s infinite ease-in-out;
+}
+
+/* Rewards animations */
+.rewards {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.reward {
+  position: absolute;
+  font-size: 24px;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition: all 0.5s ease;
+}
+
+@keyframes popReward {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  40% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, calc(-50% - 20px)) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, calc(-50% - 50px)) scale(0.5); }
+}
+
+.timer-running .reward {
+  animation: popReward 5s infinite;
+}
+
+.star-1 {
+  left: 20%;
+  top: 30%;
+  animation-delay: 0s;
+}
+
+.star-2 {
+  left: 80%;
+  top: 40%;
+  animation-delay: 3s;
+}
+
+.star-3 {
+  left: 30%;
+  top: 60%;
+  animation-delay: 6s;
+}
+
+.star-4 {
+  left: 70%;
+  top: 20%;
+  animation-delay: 9s;
+}

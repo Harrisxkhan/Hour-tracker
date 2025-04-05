@@ -1,44 +1,67 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
-function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, currentGoal = 0 }) {
+function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, currentGoal = 0, onTimerStateChange = () => {} }) {
   const [isRunning, setIsRunning] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
   const [displayedGoal, setDisplayedGoal] = useState(currentGoal)
   const intervalRef = useRef(null)
   const startTimeRef = useRef(0)
+  const onTimeUpdateRef = useRef(onTimeUpdate)
+  const onTimerStateChangeRef = useRef(onTimerStateChange)
+  const lastUpdateRef = useRef(0)
+  
+  // Update the refs when callbacks change
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate
+    onTimerStateChangeRef.current = onTimerStateChange
+  }, [onTimeUpdate, onTimerStateChange])
   
   // Update displayed goal whenever currentGoal changes
   useEffect(() => {
     setDisplayedGoal(currentGoal)
   }, [currentGoal])
   
-  // Load saved time from localStorage
+  // Load saved time from localStorage (only on mount)
   useEffect(() => {
     const savedTime = localStorage.getItem('workTracker_timer')
     if (savedTime) {
-      setElapsedTime(parseInt(savedTime, 10))
+      const parsedTime = parseInt(savedTime, 10)
+      setElapsedTime(parsedTime)
+      
+      // Only run once on initial mount using the current ref
+      const savedTimeValue = parsedTime || 0
+      onTimeUpdateRef.current(savedTimeValue)
     }
-  }, [])
+  }, []) // Empty dependency array - only run on mount
   
   // Save time to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('workTracker_timer', elapsedTime.toString())
     
-    // Update parent component with elapsed time
-    const shouldStop = onTimeUpdate(elapsedTime)
+    // Calculate minutes including seconds as a decimal part (for more accurate progress)
+    const elapsedMinutes = elapsedTime / 60
+    
+    // Always update when time changes for smooth progress
+    onTimeUpdateRef.current(elapsedMinutes)
     
     // If goal is completed, stop the timer automatically
-    if (shouldStop && isRunning) {
+    const goal = currentGoal * 60 // Convert minutes to seconds
+    if (elapsedTime >= goal && goal > 0 && isRunning) {
       pauseTimer()
     }
-  }, [elapsedTime, onTimeUpdate, isRunning])
+  }, [elapsedTime, isRunning, currentGoal])
   
   // Stop timer when goal is completed
   useEffect(() => {
     if (isGoalCompleted && isRunning) {
       pauseTimer()
     }
-  }, [isGoalCompleted])
+  }, [isGoalCompleted, isRunning])
+
+  // Update parent component when isRunning changes
+  useEffect(() => {
+    onTimerStateChangeRef.current(isRunning);
+  }, [isRunning]);
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600)
@@ -70,38 +93,60 @@ function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, current
 
   const startTimer = () => {
     if (!isRunning && canStart) {
+      // Set running state first to enable transitions immediately
       setIsRunning(true)
+      
+      // Force the timer state update callback immediately
+      onTimerStateChangeRef.current(true);
+      
+      // Calculate starting point for timer
       startTimeRef.current = Date.now() - (elapsedTime * 1000)
       
-      // Immediate update to ensure graph starts moving right away
-      onTimeUpdate(elapsedTime)
+      // Calculate current elapsed time in minutes (with decimal part for seconds)
+      const currentElapsedSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000)
+      const currentElapsedMinutes = currentElapsedSeconds / 60
       
-      // Use a shorter interval for smoother updates
+      // Force immediate update with decimal minutes for the progress bar
+      onTimeUpdateRef.current(currentElapsedMinutes)
+      
+      // Immediately trigger an update of elapsed time to ensure immediate UI update
+      setElapsedTime(currentElapsedSeconds)
+      
+      // Use a shorter interval for better responsiveness - 100ms for smoother updates
       intervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000)
         setElapsedTime(elapsed)
-      }, 500)
+      }, 100)
     }
   }
 
   const pauseTimer = () => {
     if (isRunning) {
       clearInterval(intervalRef.current)
-      setIsRunning(false)
+      intervalRef.current = null
       
       // Make sure we update one last time on pause
       const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000)
       setElapsedTime(elapsed)
+      
+      // Force the update to parent with decimal minutes
+      const elapsedMinutes = elapsed / 60
+      onTimeUpdateRef.current(elapsedMinutes)
+      
+      // Set running state to false after updates
+      setIsRunning(false)
     }
   }
 
   const resetTimer = () => {
     clearInterval(intervalRef.current)
+    intervalRef.current = null
     setIsRunning(false)
     setElapsedTime(0)
+    lastUpdateRef.current = 0
     
-    // Update with the reset value
-    onTimeUpdate(0)
+    // Update with the reset value using the ref
+    onTimeUpdateRef.current(0)
   }
 
   // Clean up interval on unmount
@@ -109,16 +154,17 @@ function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, current
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
+        intervalRef.current = null
       }
     }
   }, [])
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Work Timer</h2>
+    <div className="animate-fadeIn">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">Work Timer</h2>
       
       {canStart && displayedGoal > 0 && (
-        <div className="mb-4 bg-blue-50 p-3 rounded-md border border-blue-100 text-center">
+        <div className="mb-4 bg-blue-50 p-4 rounded-md border border-blue-100 text-center">
           <p className="text-blue-700 font-medium">
             Your goal is {formatGoal(displayedGoal)}. Let's go!
           </p>
@@ -126,7 +172,7 @@ function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, current
       )}
       
       <div className="flex flex-col items-center mb-6">
-        <div className="font-mono text-6xl font-bold text-gray-800 mb-8">
+        <div className="font-mono text-7xl font-bold text-gray-800 mb-8 animate-pulse-slow">
           {formatTime(elapsedTime)}
         </div>
         
@@ -135,7 +181,7 @@ function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, current
             <button
               onClick={startTimer}
               disabled={!canStart || isGoalCompleted}
-              className={`px-8 py-3 text-lg font-medium rounded-md shadow-sm transition ${
+              className={`px-10 py-4 text-xl font-medium rounded-md shadow-lg transition-all transform hover:scale-105 active:scale-95 ${
                 canStart && !isGoalCompleted
                   ? 'bg-green-600 hover:bg-green-700 text-white'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -146,7 +192,7 @@ function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, current
           ) : (
             <button
               onClick={pauseTimer}
-              className="px-8 py-3 bg-yellow-600 hover:bg-yellow-700 text-white text-lg font-medium rounded-md shadow-sm transition"
+              className="px-10 py-4 bg-yellow-600 hover:bg-yellow-700 text-white text-xl font-medium rounded-md shadow-lg transition-all transform hover:scale-105 active:scale-95"
             >
               Pause
             </button>
@@ -154,7 +200,7 @@ function Timer({ onTimeUpdate, canStart = true, isGoalCompleted = false, current
           
           <button
             onClick={resetTimer}
-            className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white text-lg font-medium rounded-md shadow-sm transition"
+            className="px-10 py-4 bg-red-600 hover:bg-red-700 text-white text-xl font-medium rounded-md shadow-lg transition-all transform hover:scale-105 active:scale-95"
           >
             Reset
           </button>
