@@ -76,4 +76,4 @@ To use real AI insights instead of the demo content:
 
 ## License
 
-MIT 
+MIT
